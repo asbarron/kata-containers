@@ -51,7 +51,12 @@ const DEFAULT_SUBSYSTEM: &str = "root";
 
 // Creates a logger which prints output as human readable text to the terminal
 pub fn create_term_logger(level: slog::Level) -> (slog::Logger, slog_async::AsyncGuard) {
-    let term_drain = slog_term::term_compact().fuse();
+    // slog-term's TermDecorator writes to stderr by default: request stdout
+    // explicitly so terminal logging matches the JSON logger's destination.
+    let term_decorator = slog_term::TermDecorator::new().stdout().build();
+    let term_drain = slog_term::CompactFormat::new(term_decorator)
+        .build()
+        .fuse();
 
     // Ensure only a unique set of key/value fields is logged
     let unique_drain = UniqueDrain::new(term_drain).fuse();
